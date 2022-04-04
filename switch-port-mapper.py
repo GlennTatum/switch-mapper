@@ -8,6 +8,28 @@ How it works:
 Stage 1: Get user credentials and login to switch
 Stage 2: Run 'show mac-addr-table' and push output to local file
 Stage 3: Run nmap scan and push output to local file
+
+Note:
+nmap MAC addresses will be appended to one list
+switch MAC table will be appended to another list
+the two list will then be compared to correlate IP addresses
+
+while i <= network_len:
+
+    device = nmap[0]
+
+    switch_mac_addr = [mac addresses...]
+
+    if interface_nmap in switch_mac_addr:
+        device = {
+            # create device...
+            "IP": "192.168.76.32",
+            "MAC": "FC:4D:D4:D5:24:26",
+            "INTERFACE": "0/1"
+        }
+    
+    
+
 Stage 4: Map nmap MAC ADDRESSES to Switch MAC ADDRESS Table together
 Stage 5: Display mapping of switch ports to IP Addresses
 
@@ -21,14 +43,17 @@ Port: 0/4
 
 todo:
 
-add ssh functionality
+implement sanity check for detecting virtual machines
+
+if 1 interface has multiple mac addresses it MUST be a Hypervisor
+
+add ssh functionality (for fully automatic use)
 
 Python SSH libraries
 paramiko: https://github.com/paramiko/paramiko - https://docs.paramiko.org/en/stable/
 pexpect: https://github.com/pexpect/pexpect - https://pexpect.readthedocs.io/en/stable/api/pxssh.html
 
-
-
+add file read option
 """
 
 import re
@@ -36,30 +61,34 @@ import re
 # https://stackoverflow.com/questions/26891833/python-regex-extract-mac-addresses-from-string
 p_mac_addr = re.compile(r'(?:[0-9a-fA-F]:?){12}')
 
-p_interface = re.compile(r'(\d\/\d)')
+p_ip_addr = re.compile(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b')
 
-example_nmap = ''
+p_interface = re.compile(r'(\d\/\d)') 
+# Maybe ([0]\/\d) for regex? as 5/1 and other weird interface like 3/1 show up.
 
-example_switch = '1        0A:9B:DG:14:B7:52   0/4                    4        Learned'
+# Proof of concept
+# one line from each file is matched to be pairs
 
-# p_ip_addr
+nmap_mac_addr = []
+switch_mac_addr = []
 
-a = re.findall(p_mac_addr, example_switch)
+example_nmap = 'Nmap scan report for setup.ubnt.com (192.168.76.1) MAC Address: F0:9F:C2:10:EE:4B (Ubiquiti Networks)'
 
-b = re.findall(p_interface, example_switch)
+example_switch = '1        F0:9F:C2:10:EE:4B   0/4                    4        Learned'
 
-print(a)
-print(b)
+ip = re.findall(p_ip_addr, example_nmap)
 
-network_mac_addreses = ['F0:9F:C2:10:EE:4B', 'FC:4D:D4:D5:24:26']
+nmap_mac = re.findall(p_mac_addr, example_switch)
 
-mac_address_table = ['FC:4D:D4:D5:24:26', 'F0:9F:C2:10:EE:4B']
+n_interface = re.findall(p_interface, example_switch)
 
-# Finds the current MAC ADDRESS on the network 
+example_device = {
+    "IP": ip,
+    "MAC": nmap_mac,
+    "INTERFACE": n_interface
+}
 
-for mac_address in network_mac_addreses:
-    if mac_address in mac_address_table:
-        print(f'Device: \nMAC ADDRESS: {mac_address}\nPort: 0/4\nIP Address:192.168.76.6')
+print(example_device)
 
 """
 Examples:
